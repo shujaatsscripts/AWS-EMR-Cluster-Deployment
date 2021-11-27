@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'AWS EMR cluster deployment using Cloudformation'
+Metadata: 
+
+Parameters:
+  EMRClusterName: 
+    Description: 'Name of the cluster'
+    Type: String
+    Default: 'emrcluster'
+
+  Keyname: 
+    Description: 'Keyname should already be present'
+    Type: AWS::EC2::KeyPair::KeyName
+
+  MasterInsatanceType:
+    Type: String
+    Default: 'm5.xlarge'
+
+  CoreInsatanceType:
+    Type: String
+    Default: 'm5.xlarge'
+
+  NumberofCoreInstances:
+    Type: Number
+    Default: 1
+
+  SubnetID:
+    Type: AWS::EC2::Subnet::Id
+    Default: 
+
+  LogURI:
+    Type: String
+
+  Applications:
+    Type: String
+    AllowedValues: 
+      - 'Spark'
+      - 'Hive'
+      - 'Hadoop'
+      - 'Tez'
+    
+Mappings: 
+
+Conditions: 
+  Spark:
+    Fn::Equals:
+      - Ref: Applications
+      - 'Spark'
+    
+  Hive:
+    Fn::Equals:
+      - Ref: Applications
+      - 'Hive'
+
+  Hadoop:
+    Fn::Equals:
+      - Ref: Applications
+      - 'Hadoop'
+
+  Tez:
+    Fn::Equals:
+      - Ref: Applications
+      - 'Tez'
+
+Resources: 
+
+  EMRCluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Applications:
+        - FN::If: 
+            - Spark
+            - Name: 'Spark'
+            - Ref : AWS::NoValue
+        - FN::If: 
+            - Hive
+            - Name: 'Hive'
+            - Ref : AWS::NoValue
+        - FN::If: 
+            - Hadoop
+            - Name: 'Hadoop'
+            - Ref : AWS::NoValue
+        - FN::If: 
+            - Tez
+            - Name: 'Tez'
+            - Ref : AWS::NoValue
+
+      Instances:
+        Ec2KeyName:
+          Ref: KeyName
+        Ec2SubnetId:
+          Ref: SubnetID
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: 
+            Ref: MasterInsatanceType
+          Market: ON_Demand
+          Name: Master
+        CoreInstanceGroup:
+          InstanceCount:
+            Ref: NumberofCoreInstances
+          InstanceType:
+            Ref: CoreInsatanceType
+          Market: ON_Demand
+          Name: Core
+        TerminationProtected: false
+      
+      Name: 
+        Ref: EMRClusterName
+
+      AutoScalingRole: EMR_AutoScaling_DefaultRole
+
+      ServiceRole:
+      JobFlowRole:
+      
+
+        
+Outputs:
