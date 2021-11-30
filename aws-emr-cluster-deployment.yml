@@ -1,6 +1,6 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
 Description: 'AWS EMR cluster deployment using Cloudformation'
-Metadata: 
 
 Parameters:
   EMRClusterName: 
@@ -26,7 +26,7 @@ Parameters:
 
   SubnetID:
     Type: AWS::EC2::Subnet::Id
-    Default: 
+    Default: ""
 
   LogURI:
     Type: String
@@ -39,7 +39,6 @@ Parameters:
       - 'Hadoop'
       - 'Tez'
     
-Mappings: 
 
 Conditions: 
   Spark:
@@ -68,26 +67,26 @@ Resources:
     Type: AWS::EMR::Cluster
     Properties:
       Applications:
-        - FN::If: 
+        - Fn::If: 
             - Spark
             - Name: 'Spark'
             - Ref : AWS::NoValue
-        - FN::If: 
+        - Fn::If: 
             - Hive
             - Name: 'Hive'
             - Ref : AWS::NoValue
-        - FN::If: 
+        - Fn::If: 
             - Hadoop
             - Name: 'Hadoop'
             - Ref : AWS::NoValue
-        - FN::If: 
+        - Fn::If: 
             - Tez
             - Name: 'Tez'
             - Ref : AWS::NoValue
 
       Instances:
         Ec2KeyName:
-          Ref: KeyName
+          Ref: Keyname
         Ec2SubnetId:
           Ref: SubnetID
         MasterInstanceGroup:
@@ -110,9 +109,48 @@ Resources:
 
       AutoScalingRole: EMR_AutoScaling_DefaultRole
 
-      ServiceRole:
+      ServiceRole: 
+        Ref: EMRClusterServiceRole
       JobFlowRole:
-      
+        Ref: EMRClusterinstanceProfile
+  
 
-        
-Outputs:
+  EMRClusterServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - elasticmapreduce.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+      Path: "/"
+
+  EMRClusterinstanceProfileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
+      Path: "/"
+  
+  EMRClusterinstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: EMRClusterinstanceProfileRole
+
