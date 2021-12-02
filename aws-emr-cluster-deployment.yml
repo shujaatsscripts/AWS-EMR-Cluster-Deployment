@@ -2,23 +2,95 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: 'AWS EMR cluster deployment using Cloudformation'
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Cluster Configurations"
+        Parameters:
+          - EMRClusterName
+          - Keyname
+          - ReleaseLabel
+          - MasterInsatanceType
+          - CoreInsatanceType
+          - NumberofCoreInstances
+          - SubnetID
+          - LogUri
+      -
+        Label:
+          default: "Applications"
+        Parameters:
+          - Spark
+          - Hive
+          - Hadoop
+          - Tez
+    ParameterLabels:
+      EMRClusterName:
+        default: "EMR Cluster Name"
+      Keyname:
+        default: "Key Pair Name"
+      ReleaseLabel:
+        default: "EMR Cluster Verion"
+      MasterInsatanceType:
+        default: "Master Instance Type"
+      CoreInsatanceType:
+        default: "Core  Instance Type"
+      NumberofCoreInstances:
+        default: "Number of Code Instances"
+      SubnetID:
+        default: "Subnet ID"
+      LogUri:
+        default: "S3 locations for Logs"
+
+
 Parameters:
   EMRClusterName: 
     Description: 'Name of the cluster'
     Type: String
-    Default: 'emrcluster'
 
   Keyname: 
     Description: 'Keyname should already be present'
     Type: AWS::EC2::KeyPair::KeyName
 
+  ReleaseLabel:
+    Description: 'EMR CLuster Version'
+    Type: "String"
+    AllowedValues: 
+      - emr-5.33.1
+      - emr-5.32.1
+      - emr-5.31.1
+      - emr-5.30.2
+      - emr-5.29.0
+      - emr-5.28.1
+      - emr-5.27.1
+      - emr-5.26.0
+      - emr-5.25.0
+      - emr-5.24.1
+      - emr-5.23.1
+      - emr-5.22.0
+      - emr-5.21.2
+      - emr-5.20.1
+
+
   MasterInsatanceType:
     Type: String
     Default: 'm5.xlarge'
+    AllowedValues: 
+      - 'm5.xlarge'
+      - 'm5.2xlarge'
+      - 'm5.4xlarge'
+      - 'm5.8xlarge'
 
   CoreInsatanceType:
     Type: String
     Default: 'm5.xlarge'
+    AllowedValues: 
+      - 'm5.xlarge'
+      - 'm5.2xlarge'
+      - 'm5.4xlarge'
+      - 'm5.8xlarge'
+      - 'm5.12xlarge'
 
   NumberofCoreInstances:
     Type: Number
@@ -28,38 +100,57 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
     Default: ""
 
-  LogURI:
+  LogUri:
     Type: String
 
-  Applications:
+  Spark:
     Type: String
+    Default: 'Yes'
     AllowedValues: 
-      - 'Spark'
-      - 'Hive'
-      - 'Hadoop'
-      - 'Tez'
-    
+      - 'Yes'
+      - 'No'
+
+  Hive:
+    Type: String
+    Default: 'No'
+    AllowedValues: 
+      - 'Yes'
+      - 'No'
+
+  Hadoop:
+    Type: String
+    Default: 'No'
+    AllowedValues: 
+      - 'Yes'
+      - 'No'
+
+  Tez:
+    Type: String
+    Default: 'No'
+    AllowedValues: 
+      - 'Yes'
+      - 'No'
 
 Conditions: 
   Spark:
     Fn::Equals:
-      - Ref: Applications
-      - 'Spark'
+      - Ref: Spark
+      - 'Yes'
     
   Hive:
     Fn::Equals:
-      - Ref: Applications
-      - 'Hive'
+      - Ref: Hive
+      - 'Yes'
 
   Hadoop:
     Fn::Equals:
-      - Ref: Applications
-      - 'Hadoop'
+      - Ref: Hadoop
+      - 'Yes'
 
   Tez:
     Fn::Equals:
-      - Ref: Applications
-      - 'Tez'
+      - Ref: Tez
+      - 'Yes'
 
 Resources: 
 
@@ -104,6 +195,9 @@ Resources:
           Name: Core
         TerminationProtected: false
       
+      ReleaseLabel:
+        Ref: ReleaseLabel
+
       Name: 
         Ref: EMRClusterName
 
@@ -113,6 +207,11 @@ Resources:
         Ref: EMRClusterServiceRole
       JobFlowRole:
         Ref: EMRClusterinstanceProfile
+
+      LogUri:
+        Ref: LogUri
+
+      VisibleToAllUsers: true
   
 
   EMRClusterServiceRole:
